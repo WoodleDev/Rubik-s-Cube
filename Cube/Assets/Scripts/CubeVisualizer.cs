@@ -12,7 +12,7 @@ public class CubeVisualizer : MonoBehaviour {
         previous = new List<GameObject>();
         UpdateVisualization();
     }
-    void UpdateVisualization() {
+    public void UpdateVisualization() {
         //Clears the previous objects
         if (previous.Count != 0) {
             foreach (GameObject previousColorCube in previous){
