@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine.UI;
 using UnityEngine;
 
-public class CubeSolver : MonoBehaviour {
+public class CubeSolverOr : MonoBehaviour {
     [SerializeField]
     CubeVisualizer cubeVisualizer;
     public Dictionary<Color, Color[,]> orientation;
@@ -26,6 +26,7 @@ public class CubeSolver : MonoBehaviour {
         sideRelations = new Dictionary<Color, Color[]>();
         colorToNotation = new Dictionary<Color, char>();
         notationToColor = new Dictionary<char, Color>();
+        rotations = "";
 
         //Colors
         w = Color.white;
@@ -61,21 +62,12 @@ public class CubeSolver : MonoBehaviour {
         }
 
         //Random scramble
-        Rotate(w, 1);
-
         Rotate(o, -1);
         Rotate(r, 3);
         Rotate(b, -2);
         Rotate(y, 3);
         Rotate(g, -3);
         Rotate(w, -1);
-
-        Rotate(b, 3);
-        Rotate(y, -2);
-        Rotate(w, 1);
-        Rotate(g, -2);
-
-        Solve();
     }
 
     (int, int)[] GetEdgeIndexes(int edge) {
@@ -137,7 +129,6 @@ public class CubeSolver : MonoBehaviour {
         rotations += " ";
         //Updates visualiziation
         cubeVisualizer.UpdateVisualization();
-
     }
 
     public void RotateFromNotation(string notation) {;
@@ -187,13 +178,32 @@ public class CubeSolver : MonoBehaviour {
         } else if (pos.Item2 == 2) {
             edges.Add((int)SideRelations.Right);
         }
-        if (edges.Count == 0) {
-            throw new ArgumentException("Piece is in the middle");
-        }
         return(edges.ToArray());
     }
-    
+
+    //Gets colors on a piece
+    Color[] GetPieceColors(Color side, (int,int) pos) {
+        int[] adjEdges = PositionToEdges(pos);
+
+        List<Color> colors = new List<Color>();
+        foreach (int adjEdge in adjEdges) {
+            //Gets the position of the color on the adjacent side
+            int sideEdge = Array.IndexOf(sideRelations[sideRelations[side][adjEdge]], side);
+            int edgePos = 0;
+            if (adjEdge == (int)SideRelations.Top || adjEdge == (int)SideRelations.Bottom) {
+                edgePos = pos.Item2;
+            }
+            if (adjEdge == (int)SideRelations.Left || adjEdge == (int)SideRelations.Right) {
+                edgePos = pos.Item1;
+            }
+            (int,int) colorPosition = GetEdgeIndexes(adjEdge)[2 - edgePos];
+            //Adds the color
+            colors.Add(orientation[sideRelations[side][adjEdge]][colorPosition.Item1, colorPosition.Item2]);
+        }
+        return(colors.ToArray());
+    }
     //Returns the position of a piece on a side given a known position that the piece takes up on another side
+
     (int,int) GetOtherPiecePosition(Color side1, Color side2, (int,int) pos) {
         //Checks if the new side is valid
         if (!sideRelations[side1].Contains(side2)) {
@@ -206,68 +216,43 @@ public class CubeSolver : MonoBehaviour {
         }
         (int,int) s2pos = GetEdgeIndexes(s2e)[2 - Array.IndexOf(GetEdgeIndexes(s1e), pos)];
         return s2pos;
+        /*
+        int side1PositionIndex = Array.IndexOf(GetEdgeIndexes(Array.IndexOf(sideRelations[side1], side2)), pos);
+        (int,int) side2Position = GetEdgeIndexes(Array.IndexOf(sideRelations[side2], side1))[2 - side1PositionIndex];
+        return(side2Position);
+        */
     }
-    
-    //Gets colors on a piece
-    Color[] GetPieceColors(Color side, (int,int) pos) {
-        int[] adjEdges = PositionToEdges(pos);
-
-        List<Color> colors = new List<Color>();
-        colors.Add(orientation[side][pos.Item1, pos.Item2]);
-        foreach (int adjEdge in adjEdges) {
-            Color adjSide = sideRelations[side][adjEdge];
-            (int,int) adjPos = GetOtherPiecePosition(side, adjSide, pos);
-            colors.Add(orientation[adjSide][adjPos.Item1, adjPos.Item2]);
-        }
-        return(colors.ToArray());
-    }
-
 
     public string Solve() {
-        //DEBUGOOO 2 ELECTRIC booGALOOOOO
-        //REMOVE EDGE PIECES ROTATED BY W
-        //ROTATE PIECES WHENVER TURN SIDE
-        //White cross
-        //Gets white pieces
+        //Clears rotations
+        rotations = "";
+        //Forms cross on white side
         Color[] wAdjSides = sideRelations[w];
         foreach (Color wAdjSide in wAdjSides) {
-            //Counts the number of white dges
-            int positionCount = 0;
-            for (int p = 0; p < 4; p++) {
-                (int,int) edgePos = GetEdgeIndexes(p)[1];
-                if (orientation[wAdjSide][edgePos.Item1, edgePos.Item2] == w) {
-                    positionCount++;
-                }
-            }
-            while (positionCount != 0) {
-                for (int e = 0; e < 4; e++) {
-                    //Moves piece to right
-                    (int,int) position = GetEdgeIndexes(e)[1];
-                    if (orientation[wAdjSide][position.Item1, position.Item2] != w) {
-                        continue;
-                    }
-                    Rotate(wAdjSide, -e + (int)SideRelations.Right);
-
-                    //Moves empty white cross slot over the right side
-                    Color right = sideRelations[wAdjSide][(int)SideRelations.Right];
-                    (int, int) targetWPosition = GetOtherPiecePosition(right, w, GetEdgeIndexes((int)SideRelations.Top)[1]);
-                    while (orientation[w][targetWPosition.Item1, targetWPosition.Item2] == w) { 
-                        Rotate(w, 1);
-                    }
-                    //Rotates right to move piece in
-                    Rotate(right, 1);
-                }
-                //Recounts the number of edges to see if another pass is needed
-                positionCount = 0;
-                for (int p = 0; p < 4; p++) {
-                    (int,int) edgePos = GetEdgeIndexes(p)[1];
-                    if (orientation[wAdjSide][edgePos.Item1, edgePos.Item2] == w) {
-                        positionCount++;
+            //Finds white positions that are on the edges
+            (int, int)[] wPositions = SideContains(wAdjSide, w);
+            if (wPositions.Length != 0) {
+                foreach ((int, int) position in wPositions) { 
+                    for (int e = 0; e < 4; e++) { 
+                        if (position == GetEdgeIndexes(e)[1]) {
+                            //Moves it to an empty position in the cross
+                            //Prepares the side to be moved in
+                            if (e != (int)SideRelations.Right) {
+                                Rotate(wAdjSide, -e + (int)SideRelations.Right);
+                            }
+                            //Rotates the white side
+                            Color rotateSide = sideRelations[wAdjSide][(int)SideRelations.Right];
+                            (int, int) targetWPosition = GetOtherPiecePosition(rotateSide, w, GetEdgeIndexes((int)SideRelations.Top)[1]);
+                            while (orientation[w][targetWPosition.Item1, targetWPosition.Item2] == w) { 
+                                Rotate(w, 1);
+                            }
+                            Rotate(rotateSide, 1);
+                            break;
+                        }    
                     }
                 }
-            }
+            }    
         }
-
         //Finds white positions on yellow
         (int,int)[] yWPositions = SideContains(y, w);
         foreach((int,int) yWPosition in yWPositions) {
@@ -280,21 +265,22 @@ public class CubeSolver : MonoBehaviour {
                 Rotate(sideTW, 2);
             }
         }
+       
         //Fixes the orientation of the adj sides
         foreach (Color wAdjSide in wAdjSides) {
             (int, int) topMiddle = GetEdgeIndexes((int)SideRelations.Top)[1];
             if (orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] != wAdjSide) {
                 Color leftSide = sideRelations[wAdjSide][(int)SideRelations.Left];
                 Color oppositeSide = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], wAdjSide) + 2, 4)];
-                if (orientation[leftSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide) {
+                if (orientation[leftSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide && orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == leftSide) {
                     //Left side
                     Rotate(wAdjSide, -1);
                     Rotate(w, -1);
                     Rotate(wAdjSide, 1);
                     Rotate(w, 1);
                     Rotate(wAdjSide, -1);
+                    //Checking the right side isn't needed
                 } else if (orientation[oppositeSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide && orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == oppositeSide) {
-                    //Opposite
                     Rotate(wAdjSide, 2);
                     Rotate(oppositeSide, 2);
                     Rotate(y, 2);
@@ -303,340 +289,240 @@ public class CubeSolver : MonoBehaviour {
                 }
             }
         }
-
+        return "b";
         //F2L
-        //Finds empty pair slots 
+        //Finds empty pair slots
         List<(Color,Color)> emptyPairs = new List<(Color, Color)>();
-        for (int c = 0; c < 4; c++) {
-            (int,int) cornerPos = GetEdgeIndexes(c)[0];
-            int[] edges = PositionToEdges(cornerPos);
-            Color c1 = sideRelations[y][edges[0]];
-            Color c2 = sideRelations[y][edges[1]];
-            int otherEdge = Array.IndexOf(sideRelations[c1], c2);
-            (int,int)[] positions = GetEdgeIndexes(otherEdge);
-            foreach ((int,int) position in positions) {
-                if (position == GetOtherPiecePosition(y, c1, cornerPos)) {
-                    continue;
-                }
-                if (!(orientation[c1][position.Item1, position.Item2] == c1 && GetPieceColors(c1, position).Contains(c2))) {
-                    emptyPairs.Add((c1,c2));
-                    break;
-                }
+        for (int c = 0; c < 4; c++) { 
+            int corner = Mathf.FloorToInt(c / 2);
+            Color pairSide1 = sideRelations[w][Extension.mod(c - 1, 4)];
+            Color pairSide2 = sideRelations[w][c];
+            
+            (int, int) wCornerPosition = GetEdgeIndexes(c)[0];
+            int pairSide1EdgeOffset = GetEdgeIndexes(Array.IndexOf(sideRelations[pairSide1], pairSide2))[0].Item2;
+            int pairSide2EdgeOffset = GetEdgeIndexes(Array.IndexOf(sideRelations[pairSide2], pairSide1))[0].Item2;
+            if (orientation[w][wCornerPosition.Item1, wCornerPosition.Item2] == w &&
+                orientation[pairSide1][0, pairSide1EdgeOffset] == pairSide1 &&
+                orientation[pairSide1][1, pairSide1EdgeOffset] == pairSide1 &&
+                orientation[pairSide2][0, pairSide2EdgeOffset] == pairSide2 &&
+                orientation[pairSide2][1, pairSide2EdgeOffset] == pairSide2 ) {
+
+            } else {
+                emptyPairs.Add((pairSide1, pairSide2));
             }
         }
+        foreach ((Color,Color) emptyPair in emptyPairs) {
+            Debug.Log(emptyPair);
+        }
+        return "h";
         //Creates pairs
-        for (int pi = 0; pi < emptyPairs.Count; pi++) {
-            (Color, Color) emptyPair = emptyPairs[pi];
-            //Finds the edge and corner pieces
-            (Color, (int,int))? cornerLoc = null;
-            (Color, (int,int))? edgeLoc = null;
-            foreach (Color side in new Color[] {g, r, b, o}) {
-                List<(int,int)> positions = GetEdgeIndexes((int)SideRelations.Right).ToList();
-                positions.AddRange(new (int, int)[] {GetEdgeIndexes((int)SideRelations.Top)[1], GetEdgeIndexes((int)SideRelations.Bottom)[1]});
-                for (int p = 0; p < positions.Count; p++) {
-                    (int,int) position = positions[p];
-                    Color[] colors = GetPieceColors(side, position);
-                    if (colors.Contains(emptyPair.Item1) && colors.Contains(emptyPair.Item2)) {
-                        if (colors.Contains(w)) {
-                            cornerLoc = (side, position);
-                        } else if (colors.Length == 2) {
-                            edgeLoc = (side, position);
+        foreach ((Color, Color) emptyPair in emptyPairs) {
+           //Checks if the pieces needed to make a pair are already on the yellow side
+           (int,int)? cornerOnYellow = null;
+           (int,int)? edgeOnYellow = null;
+           foreach (Color color in new Color[] {w, emptyPair.Item1, emptyPair.Item2}) {
+                (int,int)[] bottomPositions = GetEdgeIndexes((int)SideRelations.Bottom);
+                foreach(Color wAdjSide in wAdjSides) {
+                    foreach((int,int) bottomPosition in bottomPositions) {
+                        Color[] pieceColors = GetPieceColors(wAdjSide, bottomPosition);
+                        if (pieceColors.Contains(emptyPair.Item1) && pieceColors.Contains(emptyPair.Item2)) {
+                            if (pieceColors.Contains(w)) {
+                                //Adds corner position
+                                cornerOnYellow = GetOtherPiecePosition(wAdjSide, y, bottomPosition);
+                            } else {
+                                //Adds edge position
+                                edgeOnYellow = GetOtherPiecePosition(wAdjSide, y, bottomPosition);
+                            }
                         }
                     }
                 }
-            }
+           }
+           //Moves any remaining piece needed to make the pair onto the yellow side
+           if (cornerOnYellow == null || edgeOnYellow == null) {
 
-            //Moves any remaining piece needed to make the pair onto the yellow side
-            (int,int)[] yellowSidePositions = GetEdgeIndexes((int)SideRelations.Bottom);
-            bool yHasCorner = yellowSidePositions.Contains(cornerLoc.Value.Item2);
-            bool yHasEdge = yellowSidePositions.Contains(edgeLoc.Value.Item2);
-            (int,int) edgePos = (-1, -1);
-            (int,int) cornerPos = (-1, -1);
-            if (!yHasCorner || !yHasEdge) {
+                Color cornerSide = new Color();
+                (int,int) cornerPos = GetEdgeIndexes((int)SideRelations.Top)[0];
+                if (cornerOnYellow == null) {
+                    foreach (Color side in wAdjSides) {
+                        Color[] pieceColors = GetPieceColors(side, cornerPos);
+                        if (pieceColors.Contains(emptyPair.Item1) && pieceColors.Contains(emptyPair.Item2)) {
+                            cornerSide = side;
+                        }
+                    }
+                } else {
+                    int[] edges = PositionToEdges(cornerOnYellow.Value);
+                    for (int e = 0; e < edges.Length; e++) {
+                        if (GetOtherPiecePosition(y, sideRelations[y][e], cornerOnYellow.Value) == cornerPos) {
+                            cornerSide = sideRelations[y][e];
+                        }
+                    }
+                }
+                Color edgeSide = new Color();
+                (int,int) edgePos = GetEdgeIndexes((int)SideRelations.Right)[1];
+                if (edgeOnYellow == null) {
+                    foreach (Color side in wAdjSides) {
+                        Color[] pieceColors = GetPieceColors(side, edgePos);
+                        if (pieceColors.Contains(emptyPair.Item1) && pieceColors.Contains(emptyPair.Item2)) {
+                            edgeSide = side;
+                        }
+                    }
+                } else {
+                    edgeSide = sideRelations[y][PositionToEdges(edgeOnYellow.Value)[0]];
+                }
 
-                //Rotates corner in
-                Color cornerSide = cornerLoc.Value.Item1;
-                int cornerEdge = Array.IndexOf(sideRelations[y], cornerSide);
-                if (!yHasCorner) {
-                    if (yHasEdge) {
-                        edgePos = GetOtherPiecePosition(edgeLoc.Value.Item1, y, edgeLoc.Value.Item2);
-                        while (PositionToEdges(edgePos)[0] != Extension.mod(Array.IndexOf(sideRelations[y], cornerSide) + 2, 4)) {
+                if (cornerOnYellow == null) {
+                    if (edgeOnYellow != null) {
+                        (int,int) position = GetEdgeIndexes(Array.IndexOf(sideRelations[y], edgeSide))[1];
+                        while (edgeOnYellow != (2 - position.Item1, 2 - position.Item2)) {
                             Rotate(y, 1);
-                            edgePos = GetEdgeIndexes(Extension.mod(PositionToEdges(edgePos)[0] + 1, 4))[1];
+                            edgeOnYellow = (2 - edgeOnYellow.Value.Item2, 2 + edgeOnYellow.Value.Item1);
                         }
                     }
-                    Rotate(cornerSide, 1);
-                    Rotate(y, 1);
                     Rotate(cornerSide, -1);
-
-                    cornerEdge = Extension.mod(cornerEdge + 1, 4);
-                    cornerSide = sideRelations[y][cornerEdge];
-                    cornerPos = GetEdgeIndexes(cornerEdge)[0];
+                    Rotate(y, -1);
+                    Rotate(cornerSide, 1);
                 }
-                
-                //Rotates edge in
-                if (!yHasEdge) {
-                    Color edgeSide = edgeLoc.Value.Item1;
-                    //cornerPos = GetEdgeIndexes(Array.IndexOf(sideRelations[y], cornerSide))[2];   
-                    (int,int) targetCornerPos = GetEdgeIndexes(Extension.mod(Array.IndexOf(sideRelations[y], edgeSide) - 2, 4))[0];
-                    while (cornerPos != targetCornerPos) {
-                        Rotate(y, 1);
-                        cornerEdge = Extension.mod(cornerEdge + 1, 4);
-                        cornerPos = GetEdgeIndexes(cornerEdge)[0];
+                if (edgeOnYellow == null) {
+                    if (cornerOnYellow != null) {
+                        (int,int) position = GetEdgeIndexes(Array.IndexOf(sideRelations[y], cornerSide))[0];
+                        while (cornerOnYellow != (2 - position.Item1, 2 - position.Item2)) {
+                            Rotate(y, 1);
+                            cornerOnYellow = (2 - cornerOnYellow.Value.Item2, 2 + cornerOnYellow.Value.Item1);
+                        }
                     }
                     Rotate(edgeSide, 1);
                     Rotate(y, 1);
                     Rotate(edgeSide, -1);
-                    edgePos = GetEdgeIndexes(Extension.mod(Array.IndexOf(sideRelations[y], edgeSide) + 1, 4))[1];
-                    cornerEdge = Extension.mod(cornerEdge + 1, 4);
-                    cornerPos = GetEdgeIndexes(cornerEdge)[0];
                 }
 
-                //DEBUG NOTE
-                //EDGE POS IS UNDEFINED
-            }
-            //Gets position - temporary
-            for (int e = 0; e < 4; e++) {
-                (int,int)[] positions = GetEdgeIndexes(e);
-                Color[] edge = GetPieceColors(y, positions[1]);
-                Color[] corner = GetPieceColors(y, positions[0]);
-                if (edge.Contains(emptyPair.Item1) && edge.Contains(emptyPair.Item2)) {
-                    edgePos = positions[1];
-                }
-                if (corner.Contains(emptyPair.Item1) && corner.Contains(emptyPair.Item2) && corner.Contains(w)) {
-                    cornerPos = positions[0];
-                }
-            }
-
-            //Solves the pair
-            int[] cornerEdges;
-            //Separates the corner
-            if (PositionToEdges(cornerPos).Intersect(PositionToEdges(edgePos)).Count() == 1) {
-                //Finds side where there is only the corner and an empty pair is on the opposite side of the corner
-                cornerEdges = PositionToEdges(cornerPos);
-                int edgeEdge = Array.IndexOf(cornerEdges, PositionToEdges(edgePos)[0]);
-                int cornerOnlyEdge = cornerEdges[1 - edgeEdge];
-                int relativeEdge = new int();
-                if (Extension.mod(cornerOnlyEdge - 1, 4) == edgeEdge) {
-                    relativeEdge = -1;
-                } else {
-                    relativeEdge = 1;
-                }
-                Color cornerOnlySide = sideRelations[y][cornerOnlyEdge];
-                bool empty = false;
-                while (!empty) {
-                    Rotate(y, 1);
-                    cornerOnlyEdge = Extension.mod(cornerOnlyEdge + 1, 4);
-                    cornerOnlySide = sideRelations[y][cornerOnlyEdge];
-                    cornerPos = GetEdgeIndexes(cornerOnlyEdge)[0];
-
-                    edgeEdge = Extension.mod(edgeEdge + 1, 4);
-                    edgePos = GetEdgeIndexes(edgeEdge)[1];
-                    //Finds empty pair that hasn't been solved yet
-                    for (int ep = 0; ep < emptyPairs.Count; ep ++) {
-                        if (ep < pi) {
-                            continue;
-                        }
-                        //Turns corner to right spot
-                        (Color,Color) emptyPairSides = emptyPairs[ep];
-                        Color[] sides = new Color[] {cornerOnlySide, sideRelations[y][Extension.mod(cornerOnlyEdge + relativeEdge + 2, 4)]};
-                        if (sides.Contains(emptyPairSides.Item1) && sides.Contains(emptyPairSides.Item2)) {
-                            empty = true;
-                            break;
-                        }
-                    }   
-                } 
-
-                //Rotates the corner out of the way
-                //DEBUG NOTE CORNERONLYEDGE IS WRONG
-                cornerOnlySide = sideRelations[y][cornerOnlyEdge];
-                int cornerOnlySideRot =  1 - GetOtherPiecePosition(y, sideRelations[y][cornerOnlyEdge], cornerPos).Item2;
-                Rotate(cornerOnlySide,  cornerOnlySideRot);
-
-                //Rotates edge to right spot
-                //yes
-                Rotate(y, -2 - Extension.mod(cornerOnlySideRot, -1));
-                Rotate(cornerOnlySide, -cornerOnlySideRot);
-
-                edgeEdge = Extension.mod(edgeEdge -2, 4);
-                edgePos = GetEdgeIndexes(edgeEdge)[1];
-            }
-
-            //Moves corner above empty pair
-            //Gets corner position
-            cornerEdges = new int[2];
-
-            //Gets positions
-            for (int e = 0; e < 4; e++) {
-                (int,int)[] positions = GetEdgeIndexes(e);
-                Color[] edge = GetPieceColors(y, positions[1]);
-                Color[] corner = GetPieceColors(y, positions[0]);
-                if (edge.Contains(emptyPair.Item1) && edge.Contains(emptyPair.Item2)) {
-                    edgePos = positions[1];
-                }
-                if (corner.Contains(emptyPair.Item1) && corner.Contains(emptyPair.Item2) && corner.Contains(w)) {
-                    cornerPos = positions[0];
+           } else if (cornerOnYellow != null && edgeOnYellow != null) {
+                int[] cornerEdges;
+                (int,int) cornerPos = cornerOnYellow.Value;
+                (int,int) edgePos = edgeOnYellow.Value;
+                //Solves the pair
+                //Separates the corner
+                if (Mathf.Abs(cornerPos.Item1 - edgePos.Item1) == 1 || Mathf.Abs(cornerPos.Item2 - edgePos.Item2) == 1 ) {
+                    //Finds side where there is only the corner and an empty pair is on the opposite side of the corner
                     cornerEdges = PositionToEdges(cornerPos);
-                }
-            }
+                    int cornerOnlyEdge = cornerEdges[1 - Array.IndexOf(cornerEdges, PositionToEdges(edgePos)[0])];
+                    Color cornerOnlySide = sideRelations[y][cornerOnlyEdge];
+                    bool isEmpty = false;
+                    while (!isEmpty) {
+                        cornerOnlySide = sideRelations[y][cornerOnlyEdge];
+                        foreach ((Color,Color) emptyPairColors in emptyPairs) {
+                            if (cornerOnlySide == emptyPairColors.Item1) {
+                                if (cornerOnlySide == emptyPairColors.Item2) {
+                                    isEmpty = true;
+                                }
+                            } else if (cornerOnlySide == emptyPairColors.Item2) {
+                                if (cornerOnlySide == emptyPairColors.Item1) {
+                                    isEmpty = true;
+                                }
+                            }
+                        }
+                        Rotate(y,1);
+                        cornerOnlyEdge = Extension.mod(cornerOnlyEdge + 1, 4);
+                    }
 
-            //Rotates yellow side until above the right empty pair
-            int c1Index = Array.IndexOf(sideRelations[y], emptyPair.Item1);
-            int c2Index = Array.IndexOf(sideRelations[y], emptyPair.Item2);
-            while (!(cornerEdges.Contains(c1Index) && cornerEdges.Contains(c2Index))) {
-                Rotate(y, 1);
-                for (int i = 0; i < cornerEdges.Length; i++) {
-                    cornerEdges[i] = Extension.mod(cornerEdges[i] + 1, 4);
-                }
-            }
-            
-            //Rotates edge to the right place
-            //[ ][e][ ]
-            //[ ][ ][ ] R
-            //[ ][ ][c]
-            //    F
-            //gets the corner of the side with the edge and checks if that corner has the same edges as the corner
-            Color right = emptyPair.Item1;
-            if (Array.IndexOf(sideRelations[emptyPair.Item1], emptyPair.Item2) == (int)SideRelations.Left){
-                right = emptyPair.Item2;
-            }
-            if (PositionToEdges(cornerPos).Intersect(PositionToEdges(GetEdgeIndexes(PositionToEdges(edgePos)[0])[2])).Count() == 0) { 
-                Rotate(y, 1);
-                Rotate(right, 1);
-                Rotate(y, -1);
-                Rotate(right, -1);
-                Rotate(y, 1);
-                Rotate(right, 1);
-                Rotate(y, -2);
-                Rotate(right, -1);
-                Rotate(y, 2);
-            }
-            //Algorithm
-            Color cornerTop = new Color();
-            Color edgeTop = new Color();
-            //Gets colors
-            for (int e = 0; e < 4; e++) {
-                (int,int)[] positions = GetEdgeIndexes(e);
-                Color[] edge = GetPieceColors(y, positions[1]);
-                Color[] corner = GetPieceColors(y, positions[0]);
-                if (edge.Contains(emptyPair.Item1) && edge.Contains(emptyPair.Item2)) {
-                    edgePos = positions[1];
-                    edgeTop = orientation[y][positions[1].Item1, positions[1].Item2];
-                }
-                if (corner.Contains(emptyPair.Item1) && corner.Contains(emptyPair.Item2) && corner.Contains(w)) {
-                    cornerPos = positions[0];
-                    cornerTop = orientation[y][positions[0].Item1, positions[0].Item2];
-                }
-            }
+                    //Rotates the corner out of the way
+                    cornerOnlySide = sideRelations[y][cornerOnlyEdge];
+                    int cornerOnlySideRot =  1 - GetOtherPiecePosition(y, sideRelations[y][cornerOnlyEdge], cornerPos).Item2;
+                    Rotate(cornerOnlySide,  cornerOnlySideRot);
 
-            Color up = y;
-            Color front = sideRelations[y][Extension.mod(PositionToEdges(edgePos)[0] + 2, 4)];
-            right = sideRelations[y][Extension.mod(PositionToEdges(edgePos)[0] + 1, 4)];
+                    //Rotates edge to right spot
+                    //It's stupid but it works
+                    Rotate(y, -2 - Extension.mod(cornerOnlySideRot, -1));
 
-            //White on top
-            //F' U F R U' R' U'
-            if (cornerTop == w) {
-                if (edgeTop == right) {
-                    //R U' R' U R U' R' U2 F' U2 F U'2 F' U F
+                    //Rotates the corner back into place
+                    Rotate(cornerOnlySide, -cornerOnlySideRot);
+
+                }
+
+                //Moves corner above empty pair
+                //Gets corner position
+                cornerEdges = new int[2];
+                List<(int,int)> corners = new List<(int, int)>();
+                for (int e = 0; e < 4; e++) {
+                    corners.Add(GetEdgeIndexes(e)[0]);
+                }
+                foreach((int,int) corner in corners) {
+                    Color[] pieceColors = GetPieceColors(y, corner);
+                    if (pieceColors.Contains(w) && pieceColors.Contains(emptyPair.Item1) && pieceColors.Contains(emptyPair.Item2)) {
+                        cornerEdges = PositionToEdges(corner);
+                        if (cornerEdges.Length != 2) {
+                            throw new Exception("Corner doesn't have 2 edges");
+                        }
+                    }
+                }
+                //Rotates yellow side until above the right empty pair
+                int c1Index = Array.IndexOf(sideRelations[y], emptyPair.Item1);
+                int c2Index = Array.IndexOf(sideRelations[y], emptyPair.Item2);
+                while (cornerEdges.Contains(c1Index) && cornerEdges.Contains(c2Index)) {
+                    Rotate(y, 1);
+                    for(int i = 0; i < cornerEdges.Length; i++) {
+                        cornerEdges[i] = Extension.mod(cornerEdges[i] + 1, cornerEdges.Length);
+                    }
+                }
+                //Algorithm
+                Color cornerTop = new Color();
+                Color edgeTop = new Color();
+                foreach((int,int) e1Pos in GetEdgeIndexes(cornerEdges[0])) {
+                    foreach((int,int) e2Pos in GetEdgeIndexes(cornerEdges[1])) {
+                        if (e1Pos == e2Pos) {
+                            cornerPos = e1Pos;
+                            cornerTop = orientation[y][e1Pos.Item1, e1Pos.Item2];
+                        }
+                    }
+                }
+                for (int i = 0; i < 4; i++){
+                    (int, int) position = GetEdgeIndexes(i)[0];
+                    Color[] pieceColors = GetPieceColors(y, (position.Item1, position.Item2));
+                    if (pieceColors.Contains(emptyPair.Item1) && pieceColors.Contains(emptyPair.Item2)) {
+                        edgePos = position;
+                        edgeTop = orientation[y][position.Item1, position.Item2];
+                    }
+                }
+
+                Color up = y;
+                Color front = sideRelations[y][Extension.mod(PositionToEdges(edgePos)[0] + 2, 4)];
+                Color right = sideRelations[y][Extension.mod(PositionToEdges(edgePos)[0] + 1, 4)];
+
+                //White on top
+                //F' U F R U' R' U'
+                if (cornerTop == w) {
+                    Rotate(front, -1);
+                    Rotate(up, 1);
+                    Rotate(front, 1);
                     Rotate(right, 1);
                     Rotate(up, -1);
                     Rotate(right, -1);
+                    Rotate(up, -1);
+                }
+
+                if (cornerTop == edgeTop) {
+                    //Same color
+                    //F U F' U R U' R'
+                    Rotate(front, 1);
                     Rotate(up, 1);
-                    Rotate(right, 1);
+                    Rotate(front, -1);
+                    Rotate(up, 1);
+                    Rotate(right ,1);
                     Rotate(up, -1);
                     Rotate(right, -1);
-                    Rotate(up, 2);
-                    Rotate(front, -1);
-                    Rotate(up, 2);
-                    Rotate(front, 1);
-                    Rotate(up, -2);
-                    Rotate(front, -1);
-                    Rotate(up, 1);
-                    Rotate(front, 1);
-                } else {
-                    //F' U F U2 F U2 F' U R U' R'
-                    Rotate(front, -1);
-                    Rotate(up, 1);
-                    Rotate(front, 1);
-                    Rotate(up, 2);
-                    Rotate(front, 1);
-                    Rotate(up, 2);
-                    Rotate(front, -1);
-                    Rotate(up, 1);
+                } else if (cornerTop != edgeTop) {
+                    //Different color
+                    //R U R'
                     Rotate(right, 1);
-                    Rotate(up, -1);
+                    Rotate(up, 1);
                     Rotate(right, -1);
                 }
-            } else if (cornerTop == edgeTop) {
-                //Same color
-                //F U F' U R U' R'
-                Rotate(front, 1);
-                Rotate(up, 1);
-                Rotate(front, -1);
-                Rotate(up, 1);
-                Rotate(right ,1);
-                Rotate(up, -1);
-                Rotate(right, -1);
-                
-            } else if (cornerTop != edgeTop) {
-                //Different color
-                (int,int) rightPos = GetOtherPiecePosition(y, right, cornerPos);
-                if (orientation[right][rightPos.Item1, rightPos.Item2] == w) {
-                    //W on right
-                    //R U R'    
-                    Rotate(right, 1);
-                    Rotate(up, 1);
-                    Rotate(right, -1);
-                } else {
-                    //W on front
-                    //F' U F U' F' U' F U2' F' U F
-                    Rotate(front, -1);
-                    Rotate(up, 1);
-                    Rotate(front, 1);
-                    Rotate(up, -1);
-                    Rotate(front, -1);
-                    Rotate(up, -1);
-                    Rotate(front, 1);
-                    Rotate(up, -2);
-                    Rotate(front, -1);
-                    Rotate(up, 1);
-                    Rotate(front, 1);
-                }
-                
-            }
+
+                emptyPairs.Remove(emptyPair);
+                    
+           }
         }
-        //return "f";
-        
+        return "e";
         //Yellow cross
-        List<(int,int)> yCrossEmptyPositions = new List<(int, int)>();
-        for (int e = 0; e < 4; e++) {
-            (int,int) position = GetEdgeIndexes(e)[1];
-            if (orientation[y][position.Item1, position.Item2] != y) {
-                yCrossEmptyPositions.Add(position);
-            }
-        }
-        //No edges
-        if (yCrossEmptyPositions.Count == 4) {
-            //F (R U R' U') F'
-            Color front = g;
-            Color up = y;
-            Color right = r;
-
-            Rotate(front, 1);
-            Rotate(right, 1);
-            Rotate(up, 1);
-            Rotate(right, -1);
-            Rotate(up, -1);
-            Rotate(front, -1);
-        }
-        //Adjacent edges
-        if (yCrossEmptyPositions.Count == 2) {
-
-        }
-        
-        //Bar
-
-        /*
         (int,int)[] yEdgePositions = new (int,int)[4];
         Color[] yEdgeColors = new Color[4];
         for(int e = 0; e < 4; e++) {
@@ -668,8 +554,7 @@ public class CubeSolver : MonoBehaviour {
                 }
             }
         }
-        */
-        return"erere";
+
         //Orientation
         List<int> yLessCorners = new List<int>();
         for(int e = 0; e < 4; e++) {
@@ -875,7 +760,7 @@ public class CubeSolver : MonoBehaviour {
                 Rotate(right, 1);
             }
         }
-
+        
         //PLL
         //Edges
         (int,int) ePosition = GetEdgeIndexes((int)SideRelations.Bottom)[1];
@@ -1098,6 +983,7 @@ public class CubeSolver : MonoBehaviour {
             Rotate(right, -1);
             Rotate(down, -1);
         }
+
         //ANTI SQUIGGLY
         return rotations;    
     }

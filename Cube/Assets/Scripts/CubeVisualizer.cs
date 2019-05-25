@@ -14,12 +14,12 @@ public class CubeVisualizer : MonoBehaviour {
     }
     public void UpdateVisualization() {
         //Clears the previous objects
-        if (previous.Count != 0) {
-            foreach (GameObject previousColorCube in previous){
+        if (previous != null) {
+            foreach (GameObject previousColorCube in previous) {
                 GameObject.Destroy(previousColorCube);
             }
-            previous = new List<GameObject>();
         }
+        previous = new List<GameObject>();
         foreach(KeyValuePair<Color, Color[,]> side in cube.orientation) {
             for (int r = 0; r < side.Value.GetLength(0); r++) {
                 for (int c = 0; c < side.Value.GetLength(1); c++) {

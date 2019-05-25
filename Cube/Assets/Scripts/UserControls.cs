@@ -11,6 +11,9 @@ public class UserControls : MonoBehaviour {
     CubeSolver cube;
 
     [SerializeField]
+    CubeVisualizer visualizer;
+
+    [SerializeField]
     InputField commandLine;
 
 
@@ -22,10 +25,19 @@ public class UserControls : MonoBehaviour {
 
     public void RunCommand() {
         string command = commandLine.text;
-        if (command == "Solve") {
-            string rotations = cube.Solve();
-        } else {
-            cube.RotateFromNotation(command);
+        switch(command){
+            case "Solve":
+                cube.Solve();
+                Debug.Log("Solved");
+                break;
+
+            case "UpdateVisual":
+                visualizer.UpdateVisualization();
+                break;
+
+            default: 
+                cube.RotateFromNotation(command);
+                break;
         }
     }
 }
