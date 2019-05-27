@@ -352,6 +352,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   size: 3
   cube: {fileID: 726448393}
+  mats:
+  - {fileID: 2100000, guid: 690bff0c993281149b6f93bd38f11b04, type: 2}
+  - {fileID: 2100000, guid: a5b36124889992a4c82b4fa4ab38c7e3, type: 2}
+  - {fileID: 2100000, guid: 926ed2a7cc0ff3c47b21e738307fda34, type: 2}
+  - {fileID: 2100000, guid: 2978e93cf9805d848bbc270f442a37cc, type: 2}
+  - {fileID: 2100000, guid: 7ff9dd76fc33f77489edd3de043bf07e, type: 2}
+  - {fileID: 2100000, guid: a7551981570a2c248863228f16643e69, type: 2}
 --- !u!114 &726448396
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,6 +8,8 @@ public class CubeVisualizer : MonoBehaviour {
     float size;
     [SerializeField]
     CubeSolver cube;
+    [SerializeField]
+    Material[] mats;
     List<GameObject> previous;
     void Start() {
         previous = new List<GameObject>();
@@ -26,7 +29,12 @@ public class CubeVisualizer : MonoBehaviour {
                     GameObject colorCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     colorCube.name = "R:" + r + ", C:" + c;
                     colorCube.transform.position = new Vector3((c-1) * -1.5F, size, (r-1) * 1.5F);
-                    colorCube.GetComponent<Renderer>().material.color = side.Value[r, c];
+                    foreach (Material mat in mats) {
+                        if (mat.color == side.Value[r,c]) {
+                            colorCube.GetComponent<Renderer>().material = mat;
+                        }
+                    }
+                    //colorCube.GetComponent<Renderer>().material.color = side.Value[r, c];
                     previous.Add(colorCube);
                     //Puts the cubes in the right position based on their color
                     //Uses if-else statements because switch doesn't work with Color
