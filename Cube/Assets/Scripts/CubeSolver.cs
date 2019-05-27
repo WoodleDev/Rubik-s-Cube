@@ -65,28 +65,27 @@ public class CubeSolver : MonoBehaviour {
 
         //Random scramble
         //*
+        /*
         Rotate(w, 1);
-        //*/
-        //*
+        
         Rotate(o, -1);
         Rotate(r, 3);
         Rotate(b, -2);
         Rotate(y, 3);
         Rotate(g, -3);
         Rotate(w, -1);
-        //*/
-        //*
+        
         Rotate(b, 3);
         Rotate(y, -2);
         Rotate(w, 1);
         Rotate(g, -2);
-        //*
-        //*
+        
         Rotate(w, 3);
         Rotate(b, -1);
         Rotate(y, -2);
-        //*/
+        
         Solve();
+        */
     }
 
     (int, int)[] GetEdgeIndexes(int edge) {
@@ -299,38 +298,40 @@ public class CubeSolver : MonoBehaviour {
             }
         }
         //Fixes the orientation of the adj sides
-
-        foreach (Color wAdjSide in wAdjSides) {
-            (int, int) topMiddle = GetEdgeIndexes((int)SideRelations.Top)[1];
-            if (orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] != wAdjSide) {
-                Color leftSide = sideRelations[wAdjSide][(int)SideRelations.Left];
-                Color rightSide = sideRelations[wAdjSide][(int)SideRelations.Right];
-                Color oppositeSide = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], wAdjSide) + 2, 4)];
-                if (orientation[leftSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == leftSide) {
-                    //Left side
-                    Rotate(wAdjSide, -1);
-                    Rotate(w, -1);
-                    Rotate(wAdjSide, 1);
-                    Rotate(w, 1);
-                    Rotate(wAdjSide, -1);
-                } else if (orientation[rightSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == rightSide) {
-                    //Right side
-                    Rotate(wAdjSide, 1);
-                    Rotate(w, 1);
-                    Rotate(wAdjSide, -1);
-                    Rotate(w, -1);
-                    Rotate(wAdjSide, 1);
-                } else if (orientation[oppositeSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == oppositeSide) {
-                    //Opposite
-                    Rotate(wAdjSide, 2);
-                    Rotate(oppositeSide, 2);
-                    Rotate(y, 2);
-                    Rotate(wAdjSide, -2);
-                    Rotate(oppositeSide, -2);
+        int passes = 2;
+        while (passes != 0) {
+            foreach (Color wAdjSide in wAdjSides) {
+                (int, int) topMiddle = GetEdgeIndexes((int)SideRelations.Top)[1];
+                if (orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] != wAdjSide) {
+                    Color leftSide = sideRelations[wAdjSide][(int)SideRelations.Left];
+                    Color rightSide = sideRelations[wAdjSide][(int)SideRelations.Right];
+                    Color oppositeSide = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], wAdjSide) + 2, 4)];
+                    if (orientation[leftSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == leftSide) {
+                        //Left side
+                        Rotate(wAdjSide, -1);
+                        Rotate(w, -1);
+                        Rotate(wAdjSide, 1);
+                        Rotate(w, 1);
+                        Rotate(wAdjSide, -1);
+                    } else if (orientation[rightSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == rightSide) {
+                        //Right side
+                        Rotate(wAdjSide, 1);
+                        Rotate(w, 1);
+                        Rotate(wAdjSide, -1);
+                        Rotate(w, -1);
+                        Rotate(wAdjSide, 1);
+                    } else if (orientation[oppositeSide][topMiddle.Item1, topMiddle.Item2] == wAdjSide || orientation[wAdjSide][topMiddle.Item1, topMiddle.Item2] == oppositeSide) {
+                        //Opposite
+                        Rotate(wAdjSide, 2);
+                        Rotate(oppositeSide, 2);
+                        Rotate(y, 2);
+                        Rotate(wAdjSide, -2);
+                        Rotate(oppositeSide, -2);
+                    }
                 }
             }
+        passes--;
         }
-
         //F2L
         //Finds empty pair slots 
         List<(Color,Color)> emptyPairs = new List<(Color, Color)>();
@@ -647,7 +648,6 @@ public class CubeSolver : MonoBehaviour {
                 
             }
         }
-        
         //Yellow cross
         List<(int,int)> yCrossEmptyPositions = new List<(int, int)>();
         for (int e = 0; e < 4; e++) {
@@ -692,7 +692,7 @@ public class CubeSolver : MonoBehaviour {
                 
             }
         }
-
+       
         //Orientation
         List<int> yLessCorners = new List<int>();
         for(int e = 0; e < 4; e++) {
@@ -777,12 +777,17 @@ public class CubeSolver : MonoBehaviour {
                     Rotate(right, -1);
                 } else {
                     //Facing opposite sides
+                    //       y
+                    //[y][y][ ]
+                    //[y][y][y]
+                    //[y][y][ ]
+                    //       y
                     //(Lw' U') (L U) (R U') (Rw' F)
                     Color right = commonSide;
                     Color left = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], commonSide) + 2, 4)];
                     Color up = y;
-
-                    Rotate(right, 1);
+                    
+                    Rotate(right, -1);
                     up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) - 1, 4)];
                     Rotate(up, -1);
                     Rotate(left, 1);
@@ -790,11 +795,14 @@ public class CubeSolver : MonoBehaviour {
                     Rotate(right, 1);
                     Rotate(up, -1);
                     Rotate(left, -1);
-                    up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) + 1, 4)];
+                    up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) - 1, 4)];
+                    Color forward = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) + 1, 4)];
+                    Rotate(forward, 1);
+                    
                 }
             }
         }
-
+        
         //3 Corners
         if (yLessCorners.Count == 3) {
             int middleCorner = new int();
@@ -816,8 +824,12 @@ public class CubeSolver : MonoBehaviour {
                     if (rightEdges.Contains(edge)) {
                         //Sune
                         //(R U R' U) (R U2 R')
+                        // y
+                        //[ ][y][ ]y
+                        //[y][y][y]
+                        //[y][y][ ]
+                        //       y
                         Color right = sideRelations[y][edge];
-
                         Rotate(right, 1);
                         Rotate(up, 1);
                         Rotate(right, -1);
@@ -829,11 +841,16 @@ public class CubeSolver : MonoBehaviour {
                     } else if (leftEdges.Contains(edge)) {
                         //Antisune
                         //(R U2) (R' U' R U' R')
-                        Color right = sideRelations[y][Extension.mod(edge + 2, 4)];
-                        
+                        //y[ ][y][y]
+                        // [y][y][y]
+                        // [ ][y][ ]y
+                        //  y
+                        Color right = sideRelations[y][Extension.mod(edge - 1, 4)];
                         Rotate(right, 1);
                         Rotate(up, 2);
                         Rotate(right, -1);
+                        Rotate(up, -1);
+                        Rotate(right, 1);
                         Rotate(up, -1);
                         Rotate(right, -1);
                         break;
@@ -894,31 +911,22 @@ public class CubeSolver : MonoBehaviour {
                 Rotate(right, 1);
             }
         }
-                solveOutput.text = rotations;
-        return "no";
+        
         //PLL
         //Edges
         (int,int) ePosition = GetEdgeIndexes((int)SideRelations.Bottom)[1];
         List<int> unorientedEdges = new List<int>();
-        for (int e = 0; e < 4; e++) {
-            Color c = orientation[sideRelations[y][e]][ePosition.Item1, ePosition.Item2];
-            if (c != sideRelations[y][e]) {
-                unorientedEdges.Add(e);
-            }
-        }
-        int NO = 0;
-        while (unorientedEdges.Count != 0 && NO != 4) { 
-            if (unorientedEdges.Count == 2) {
-                Rotate(y, 1);
-                unorientedEdges = new List<int>();
-                for (int e = 0; e < 4; e++) {
-                    Color c = orientation[sideRelations[y][e]][ePosition.Item1, ePosition.Item2];
-                    if (c != sideRelations[y][e]) {
-                        unorientedEdges.Add(e);
-                    }
+        void GetUnorientedEdges() {
+            unorientedEdges = new List<int>();
+            for(int e = 0; e < 4; e++) {
+                Color c = orientation[sideRelations[y][e]][ePosition.Item1, ePosition.Item2];
+                if (c != sideRelations[y][e]) {
+                    unorientedEdges.Add(e);
                 }
             }
-        
+        }
+        GetUnorientedEdges();
+        while (unorientedEdges.Count != 0) {     
             if (unorientedEdges.Count == 3) {
                 for (int e = 0; e < 4; e++) {
                     //Makes sure that e is the most clockwise edge
@@ -1035,23 +1043,14 @@ public class CubeSolver : MonoBehaviour {
                     unorientedEdges = new List<int>();
                 }
             }
-
+            GetUnorientedEdges();
             if (unorientedEdges.Count != 0) {
                 Rotate(y, 1);
-                for (int e = 0; e < 4; e++) {
-                    Color c = orientation[sideRelations[y][e]][ePosition.Item1, ePosition.Item2];
-                    if (c != sideRelations[y][e]) {
-                        unorientedEdges.Add(e);
-                    }
-                }
+                
+                GetUnorientedEdges();
             }
-            NO++;
         }
-        if (NO == 4)
-        {
-            Debug.Log("HOW");
-        }
-        return "c";
+        
         //Corners
         (int,int) cPosition = GetEdgeIndexes((int)SideRelations.Bottom)[0];
         List<int> unorientedCorners = new List<int>();
