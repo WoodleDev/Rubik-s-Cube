@@ -14,6 +14,9 @@ public class UserControls : MonoBehaviour {
     CubeVisualizer visualizer;
 
     [SerializeField]
+    Text scramble;
+
+    [SerializeField]
     InputField commandLine;
 
 
@@ -27,12 +30,27 @@ public class UserControls : MonoBehaviour {
         }
     }
 
+    public void Scramble(int length = 25) { 
+        Color[] sides = new Color[] {Color.white, Color.green, Color.red, Color.blue, Color.Lerp(Color.yellow, Color.red, 0.5F), Color.yellow};
+        string output = "";
+        for (int i = 0; i < length; i++) {
+            int index = Mathf.RoundToInt(Random.Range(0, sides.Length - 1));
+            int rotation = Mathf.RoundToInt(Random.Range(-3, 3));
+            while (rotation == 0) {
+                rotation = Mathf.RoundToInt(Random.Range(-3, 3));
+            }
+            cube.Rotate(sides[index], rotation, ref output);
+        }
+        scramble.text = output;
+        visualizer.UpdateVisualization();
+    }
+
     public void RunCommand() {
         string command = commandLine.text;
         switch(command){
             case "Solve":
                 cube.Solve();
-                Debug.Log("Solved");
+                visualizer.UpdateVisualization();
                 break;
 
             case "UpdateVisual":
