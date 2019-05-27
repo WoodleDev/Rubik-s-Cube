@@ -30,7 +30,7 @@ public class CubeVisualizer : MonoBehaviour {
                     colorCube.name = "R:" + r + ", C:" + c;
                     colorCube.transform.position = new Vector3((c-1) * -1.5F, size, (r-1) * 1.5F);
                     foreach (Material mat in mats) {
-                        if (mat.color == side.Value[r,c]) {
+                        if (ColorUtility.ToHtmlStringRGB(mat.color) == ColorUtility.ToHtmlStringRGB(side.Value[r,c])) {
                             colorCube.GetComponent<Renderer>().material = mat;
                         }
                     }
