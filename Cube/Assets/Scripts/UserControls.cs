@@ -21,6 +21,10 @@ public class UserControls : MonoBehaviour {
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
         cameraGimbal.transform.Rotate(new Vector3(vertical, horizontal, -cameraGimbal.transform.eulerAngles.z));
+
+        if (Input.GetKeyDown(KeyCode.Return)) {
+            commandLine.Select();
+        }
     }
 
     public void RunCommand() {
