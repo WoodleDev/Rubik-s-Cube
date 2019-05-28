@@ -68,31 +68,30 @@ public class CubeSolver : MonoBehaviour {
         //Random scramble
         string trash = "";
         Rotate(g, -2, ref trash);
-        Rotate(r, -1, ref trash);
-        Rotate(g, -1, ref trash);
+        Rotate(w, 1, ref trash);
+        Rotate(r, -3, ref trash);
+        Rotate(o, -3, ref trash);
+        Rotate(b, -1, ref trash);
+        Rotate(o, -2, ref trash);
+        Rotate(b, 2, ref trash);
+        Rotate(w, 2, ref trash);
+        Rotate(o, 2, ref trash);
+        Rotate(w, 2, ref trash);
+        Rotate(o, -2, ref trash);
+        Rotate(b, -3, ref trash);
+        Rotate(g, -2, ref trash);
+        Rotate(w, 1, ref trash);
         Rotate(b, 1, ref trash);
-        Rotate(r, -1, ref trash);
-        Rotate(w, -1, ref trash);
-        Rotate(r, 1, ref trash);
-        Rotate(g, 1, ref trash);
-        Rotate(g, 2, ref trash);
-        Rotate(g, -3, ref trash);
+        Rotate(o, -2, ref trash);
         Rotate(b, 1, ref trash);
         Rotate(w, 1, ref trash);
+        Rotate(g, -3, ref trash);
         Rotate(r, -1, ref trash);
-        Rotate(w, -1, ref trash);
-        Rotate(b, 1, ref trash);
-        Rotate(g, -1, ref trash);
-        Rotate(b, -2, ref trash);
-        Rotate(w, -2, ref trash);
-        Rotate(o, -1, ref trash);
-        Rotate(g, -2, ref trash);
+        Rotate(g, 1, ref trash);
+        Rotate(g, 1, ref trash);
         Rotate(r, 1, ref trash);
-        Rotate(w, -3, ref trash);
-        Rotate(r, -3, ref trash);
-        Rotate(r, -3, ref trash);
-        Rotate(r, -3, ref trash);
-
+        Rotate(r, 3, ref trash);
+        Rotate(o, 1, ref trash);
         Solve();
     }
 
@@ -114,6 +113,10 @@ public class CubeSolver : MonoBehaviour {
     }
 
     public void Rotate(Color side, int turns, ref string output)  {
+        if (turns == 0) {
+            return;
+        }
+
         //Creates a deep clone of orientation
         //https://stackoverflow.com/a/139841
         Dictionary<Color, Color[,]> originalOrientation = Extension.CloneDictionaryCloningValues<Color, Color[,]>(orientation);
@@ -172,6 +175,7 @@ public class CubeSolver : MonoBehaviour {
             string trash = "";
             Rotate(notationToColor[side], prime * Int32.Parse(turnsString), ref trash);
         }
+        visualizer.UpdateVisualization();
     }
 
     //Returns the position of where a color can be found on a side
@@ -915,7 +919,7 @@ public class CubeSolver : MonoBehaviour {
                 Rotate(right, 1, ref rotations);
             }
         }
-        
+        //return;
         //PLL
         //Edges
         (int,int) ePosition = GetEdgeIndexes((int)SideRelations.Bottom)[1];
@@ -990,67 +994,67 @@ public class CubeSolver : MonoBehaviour {
                 Color esc4 = sideRelations[y][unorientedEdges[3]];
 
                 Color ec1 = orientation[esc1][ePosition.Item1, ePosition.Item2];
-                Color ec2 = orientation[esc1][ePosition.Item1, ePosition.Item2];
-                Color ec3 = orientation[esc1][ePosition.Item1, ePosition.Item2];
-                Color ec4 = orientation[esc1][ePosition.Item1, ePosition.Item2];
+                Color ec2 = orientation[esc2][ePosition.Item1, ePosition.Item2];
+                Color ec3 = orientation[esc3][ePosition.Item1, ePosition.Item2];
+                Color ec4 = orientation[esc4][ePosition.Item1, ePosition.Item2];
             
-
-                //Checks that the edges aren't just rotated
-                Rotate(y, 1, ref rotations);
-                bool rotateSuccessful = true;
-                for (int e = 0; e < 4; e++) {
-                    Color side = sideRelations[y][e];
-                    (int,int) position = GetOtherPiecePosition(y, side, GetEdgeIndexes(e)[1]);
-                    if (orientation[side][position.Item1, position.Item2] != side) {
-                        rotateSuccessful = false;
-                    }
-                }
-
-                if (!rotateSuccessful) {
-                    Rotate(y, -1, ref rotations);
-                    Color left = r;
-                    Color right = o;
-                    if (ec1 == esc3 && ec3 == esc1 && ec2 == esc4 && ec4 == esc2) {
-                        //Across
-                        //(M2' U) (M2' U2) (M2' U) M2'
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(w, 1, ref rotations);
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(y, 2, ref rotations);
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(w, 1, ref rotations);
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                    } else if (ec1 == esc4 && ec4 == esc1 && ec2 == esc3 && ec3 == esc2) {
-                        //Diagonal
-                        //(M2' U) (M2' U) (M' U2) (M2' U2) (M' U2)
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(y, 1, ref rotations);
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(w, 1, ref rotations);
-                        Rotate(left, 1, ref rotations);
-                        Rotate(right, -1, ref rotations);
-                        Rotate(y, 2, ref rotations);
-                        Rotate(left, 2, ref rotations);
-                        Rotate(right, -2, ref rotations);
-                        Rotate(w, 2, ref rotations);
-                        Rotate(left, 1, ref rotations);
-                        Rotate(right, -1, ref rotations);
-                        Rotate(y, 2, ref rotations);
-                    }
-                } else {
-                    unorientedEdges = new List<int>();
+                Color left = r;
+                Color right = o;
+                Color up = y;
+                if (ec1 == esc3 && ec3 == esc1 && ec2 == esc4 && ec4 == esc2) {
+                    //Across
+                    //[ ][↑][ ]
+                    //[←][+][→]
+                    //[ ][↓][ ]
+                    //(M2' U) (M2' U2) (M2' U) M2'
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 1, ref rotations);
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 2, ref rotations);
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 1, ref rotations);
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                } else if (ec1 == esc4 && ec4 == esc1 && ec2 == esc3 && ec3 == esc2) {
+                    //Diagonal
+                    //[ ][↗][ ]
+                    //[↙][ ][↗]
+                    //[ ][↙][ ]
+                    Debug.Log("DIAOGNAL");
+                    //(M2' U) (M2' U) (M' U2) (M2' U2) (M' U2)
+                    //DEBUGOO NOTES
+                    //FIX ALGORITHM
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 1, ref rotations);
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 1, ref rotations);
+                    Rotate(left, 1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 1, 4)];
+                    Rotate(up, 2, ref rotations);
+                    Rotate(left, 2, ref rotations);
+                    Rotate(right, -2, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 2, 4)];
+                    Rotate(up, 2, ref rotations);
+                    Rotate(left, 1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    up = sideRelations[left][Extension.mod(Array.IndexOf(sideRelations[left], up) + 1, 4)];
+                    Rotate(up, 2, ref rotations);
                 }
             }
             GetUnorientedEdges();
             if (unorientedEdges.Count != 0) {
-                Rotate(y, 1, ref rotations);
-                
+                Rotate(y, 1, ref rotations);           
                 GetUnorientedEdges();
             }
         }
@@ -1121,7 +1125,7 @@ public class CubeSolver : MonoBehaviour {
             Color[] uc1 = unorientedColors[0];
             Color[] uc2 = unorientedColors[1];
             Color[] uc3 = unorientedColors[2];
-
+            
             if (unorientedCorners.Count == 3) {
                 Color right = ColorIntersect(cc2, cc3);
                 Color up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], y) - 1, 4)];
@@ -1159,16 +1163,13 @@ public class CubeSolver : MonoBehaviour {
                     Rotate(right, 1, ref rotations);
                 }
             }
-
             if (unorientedCorners.Count == 4) {
-
                 //Straight across
                 //[ ][ ][ ]
                 //[↕][ ][↕]
                 //[ ][ ][ ]
                 //x' (R U') (R' D) (R U R' D') (R U R' D) (R U') (R' D')
                 Color right = new Color();
-                void GetRight() {
                 for (int e = 0; e < 4; e++) {
                         Color[] colors = GetPieceColors(y, GetEdgeIndexes(e)[0]);
                         Color[] oppositeSides = CorrectCornerColors(Extension.mod(e - 1, 4));
@@ -1177,59 +1178,70 @@ public class CubeSolver : MonoBehaviour {
                             break;
                         }
                     }
-                }
-                GetRight();
 
-                //Moves the unoriented corners in the case where they aren't straight across but rather diagonal
-                //[1][ ][2]   [2][ ][4]
-                //[ ][x][ ] → [↕][ ][↕]
-                //[3][ ][4]   [3][ ][1]
-                //Inverse 3 corner
+                //Solves the 4 corner case as a 3 corner case if it's diagonal
+                //[1][ ][2]   [2][←][4]   [3][←][2]
+                //[ ][x][ ] → [↓][↗][ ] ↷ [ ][↘][↑]
+                //[3][ ][4]   [3][ ][ ]   [ ][ ][4]
                 if (right == new Color()) {
-                    Color asU = new Color();
-                    Color asR = new Color();
-                    Color asD = new Color();
+                    //Inverse 3 corner
+                    Color i3u = new Color();
+                    Color i3r = new Color();
+                    Color i3d = new Color();
                     for (int e = 0; e < 4; e++) {
                         Color[] colors = GetPieceColors(y, GetEdgeIndexes(e)[0]);
                         Color[] oppositeSides = CorrectCornerColors(Extension.mod(e + 2, 4));
                         if (colors.Intersect(oppositeSides).Count() == 2) {
-                            asU = sideRelations[y][Extension.mod(e + 2, 4)];
-                            asR = sideRelations[y][Extension.mod(e + 1, 4)];
-                            asD = sideRelations[asR][Extension.mod(Array.IndexOf(sideRelations[asR], asU) + 2, 4)];
+                            i3u = sideRelations[y][Extension.mod(e + 2, 4)];
+                            i3r = sideRelations[y][Extension.mod(e + 1, 4)];
+                            i3d = sideRelations[i3r][Extension.mod(Array.IndexOf(sideRelations[i3r], i3u) + 2, 4)];
                             break;
                         }
                     }
-                    Rotate(asR, 2, ref rotations);
-                    Rotate(asD, 2, ref rotations);
-                    Rotate(asR, 1, ref rotations);
-                    Rotate(asU, 1, ref rotations);
-                    Rotate(asR, -1, ref rotations);
-                    Rotate(asD, 2, ref rotations);
-                    Rotate(asR, 1, ref rotations);
-                    Rotate(asU, -1, ref rotations);
-                    Rotate(asR, 1, ref rotations);
-                    GetRight();
-                }
-                
-                Color up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], y) + 1, 4)];
-                Color down = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) + 2, 4)];
+                    Rotate(i3r, 2, ref rotations);
+                    Rotate(i3d, 2, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                    Rotate(i3u, 1, ref rotations);
+                    Rotate(i3r, -1, ref rotations);
+                    Rotate(i3d, 2, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                    Rotate(i3u, -1, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                    //Solves the case as a 3 corner
+                    i3u = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], i3u) - 1, 4)];
+                    i3r = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], i3r) - 1, 4)];
+                    i3d = sideRelations[y][Extension.mod(Array.IndexOf(sideRelations[y], i3d) - 1, 4)];
 
-                Rotate(right, 1, ref rotations);
-                Rotate(up, -1, ref rotations);
-                Rotate(right, -1, ref rotations);
-                Rotate(down, 1, ref rotations);
-                Rotate(right, 1, ref rotations);
-                Rotate(up, 1, ref rotations);
-                Rotate(right, -1, ref rotations);
-                Rotate(down, -1, ref rotations);
-                Rotate(right, 1, ref rotations);
-                Rotate(up, 1, ref rotations);
-                Rotate(right, -1, ref rotations);
-                Rotate(down, 1, ref rotations);
-                Rotate(right, 1, ref rotations);
-                Rotate(up, -1, ref rotations);
-                Rotate(right, -1, ref rotations);
-                Rotate(down, -1, ref rotations);
+                    Rotate(i3r, 2, ref rotations);
+                    Rotate(i3d, 2, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                    Rotate(i3u, 1, ref rotations);
+                    Rotate(i3r, -1, ref rotations);
+                    Rotate(i3d, 2, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                    Rotate(i3u, -1, ref rotations);
+                    Rotate(i3r, 1, ref rotations);
+                } else {              
+                    Color up = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], y) + 1, 4)];
+                    Color down = sideRelations[right][Extension.mod(Array.IndexOf(sideRelations[right], up) + 2, 4)];
+
+                    Rotate(right, 1, ref rotations);
+                    Rotate(up, -1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    Rotate(down, 1, ref rotations);
+                    Rotate(right, 1, ref rotations);
+                    Rotate(up, 1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    Rotate(down, -1, ref rotations);
+                    Rotate(right, 1, ref rotations);
+                    Rotate(up, 1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    Rotate(down, 1, ref rotations);
+                    Rotate(right, 1, ref rotations);
+                    Rotate(up, -1, ref rotations);
+                    Rotate(right, -1, ref rotations);
+                    Rotate(down, -1, ref rotations);
+                }
             }
         }
         solveOutput.text = rotations;
