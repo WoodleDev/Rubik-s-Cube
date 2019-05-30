@@ -59,7 +59,4 @@ public class CubeVisualizer : MonoBehaviour {
             }
         }
     }
-    void Update() {
-        //UpdateVisualization();
-    }
 }
