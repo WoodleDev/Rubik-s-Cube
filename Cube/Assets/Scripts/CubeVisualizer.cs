@@ -6,12 +6,15 @@ using UnityEngine;
 public class CubeVisualizer : MonoBehaviour {
     [SerializeField]
     float size;
-    [SerializeField]
+    
     CubeSolver cube;
     [SerializeField]
     Material[] mats;
     List<GameObject> previous;
     void Start() {
+        Reference reference = GetComponent<Reference>();
+        cube = reference.solver;
+
         previous = new List<GameObject>();
         UpdateVisualization();
     }

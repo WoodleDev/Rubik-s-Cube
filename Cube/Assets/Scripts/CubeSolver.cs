@@ -5,18 +5,18 @@ using System.Linq;
 using UnityEngine.UI;
 using UnityEngine;
 
+public enum Step {Cross, F2L, OLL, PLL};
 public class CubeSolver : MonoBehaviour {
-    [SerializeField]
+
     CubeVisualizer visualizer;
     [SerializeField]
     Text solveOutput;
 
     public Dictionary<Color, Color[,]> orientation;
-    public Dictionary<Color,Color[,]> solved;
     Dictionary<Color, Color[]> sideRelations;
     Dictionary<Color, char> colorToNotation;
     Dictionary<char, Color> notationToColor;
-    enum SideRelations {Top = 0, Right, Bottom, Left}
+    enum SideRelations {Top, Right, Bottom, Left}
     Color w;
     Color y;
     Color g;
@@ -30,7 +30,9 @@ public class CubeSolver : MonoBehaviour {
         colorToNotation = new Dictionary<Color, char>();
         notationToColor = new Dictionary<char, Color>();
 
-        solved = new Dictionary<Color, Color[,]>();
+        Reference reference = GetComponent<Reference>();
+        visualizer = reference.visualizer;
+
         //Colors
         w = Color.white;
         y = Color.yellow;
@@ -42,7 +44,6 @@ public class CubeSolver : MonoBehaviour {
         Color[] colors = new Color[] {w, y, g, r, b, o};
         foreach (Color color in colors)  {
             orientation[color] = new Color[,] {{color, color, color}, {color, color, color}, {color, color, color}};
-            solved[color] = new Color[,] {{color, color, color}, {color, color, color}, {color, color, color}};
         }
 
         //Sets up side relations
@@ -64,12 +65,9 @@ public class CubeSolver : MonoBehaviour {
         foreach(KeyValuePair<Color, char> pair in colorToNotation){
             notationToColor[pair.Value] = pair.Key;
         }
-
-        //Random scramble
-        string trash = "";
-        //Rotate(w, 1, ref trash);
     }
 
+    //Returns the positions that correspond with an edge of a face
     (int, int)[] GetEdgeIndexes(int edge) {
         //Returns the positions of the values representing the pieces making up the edge
         //Goes in clockwise order
@@ -87,6 +85,8 @@ public class CubeSolver : MonoBehaviour {
         }
     }
 
+    //Rotates sides
+    //With rotation tracking
     public void Rotate(Color side, int turns, ref List<(Color, int)> tracker)  {
         if (turns == 0) {
             return;
@@ -133,7 +133,12 @@ public class CubeSolver : MonoBehaviour {
         }
         tracker.Add((side, Extension.mod(turns, 4)));
     }
-
+    //Without
+    public void Rotate(Color side, int turns) {
+        string trash = "";
+        Rotate(side, turns);
+    }
+    //From string
     public void RotateFromNotation(string notation) {;
         string[] rotations = notation.Split(' ');
         char[] numbers = new char[] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
@@ -148,8 +153,7 @@ public class CubeSolver : MonoBehaviour {
                     }
                 }
             }
-            List<(Color, int)> trash = new List<(Color, int)>();
-            Rotate(notationToColor[side], prime * Int32.Parse(turnsString), ref trash);
+            Rotate(notationToColor[side], prime * Int32.Parse(turnsString));
         }
         visualizer.UpdateVisualization();
     }
@@ -218,6 +222,7 @@ public class CubeSolver : MonoBehaviour {
         return(colors.ToArray());
     }
 
+    //Converts a List<(Color,int)> into a string of notations
     public string RotationsToString(List<(Color, int)> rotations) {
         string output = "";
         foreach ((Color, int) rotation in rotations) {
@@ -238,8 +243,14 @@ public class CubeSolver : MonoBehaviour {
         }
         return output;
     }
-    public void Solve() {
+
+    public void Solve(int step = (int)Step.PLL) {
         List<(Color, int)> rotations = new List<(Color,int)>();
+        void End() {
+            solveOutput.text = RotationsToString(rotations);
+            visualizer.UpdateVisualization();
+            return;
+        }
         //White cross
         //Gets white pieces
         Color[] wAdjSides = sideRelations[w];
@@ -333,7 +344,10 @@ public class CubeSolver : MonoBehaviour {
             }
         passes--;
         }
-
+        if (step == (int)Step.Cross) {
+            End();
+            return;
+        }
         //F2L
         //Finds empty pair slots 
         List<(Color,Color)> emptyPairs = new List<(Color, Color)>();
@@ -649,7 +663,10 @@ public class CubeSolver : MonoBehaviour {
                 }              
             }
         }
-        
+        if (step == (int)Step.F2L) {
+            End();
+            return;
+        }
         //Yellow cross
         List<(int,int)> yCrossEmptyPositions = new List<(int, int)>();
         for (int e = 0; e < 4; e++) {
@@ -711,7 +728,6 @@ public class CubeSolver : MonoBehaviour {
 
             (int,int) corner2Pos = GetEdgeIndexes(corner2)[0];
             Color corner2Side = sideRelations[y][corner2];
-
 
             //Diagonal
             //[y][y][ ]y 
@@ -914,7 +930,10 @@ public class CubeSolver : MonoBehaviour {
                 Rotate(right, 1, ref rotations);
             }
         }
-        
+        if (step == (int)Step.OLL) {
+            End();
+            return;
+        }
         //PLL
         //Edges
         (int,int) ePosition = GetEdgeIndexes((int)SideRelations.Bottom)[1];
@@ -1238,7 +1257,10 @@ public class CubeSolver : MonoBehaviour {
                 }
             }
         }
+        /*
         solveOutput.text = RotationsToString(rotations);
         visualizer.UpdateVisualization();
+        */
+        End();
     }
 }
