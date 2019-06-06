@@ -135,8 +135,8 @@ public class CubeSolver : MonoBehaviour {
     }
     //Without
     public void Rotate(Color side, int turns) {
-        string trash = "";
-        Rotate(side, turns);
+        List<(Color,int)> trash = new List<(Color, int)>();
+        Rotate(side, turns, ref trash);
     }
     //From string
     public void RotateFromNotation(string notation) {;
