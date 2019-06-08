@@ -7,7 +7,6 @@ using UnityEngine;
 
 public enum Step {Cross, F2L, OLL, PLL};
 public class CubeSolver : MonoBehaviour {
-
     CubeVisualizer visualizer;
     [SerializeField]
     Text solveOutput;
@@ -124,13 +123,18 @@ public class CubeSolver : MonoBehaviour {
              orientation[side][newColorPosition.Item1, newColorPosition.Item2] = originalOrientation[side][colorPosition.Item1, colorPosition.Item2];
         }
         //Keeps track of the rotations
+        //Adds it to the previous if they're the same side
         if (tracker.Count != 0) {
             (Color, int) lastItem = tracker[tracker.Count - 1];
             if (lastItem.Item1 == side) {
-                lastItem = (side, Extension.mod(turns + lastItem.Item2, 4));
+                int combinedTurns = Extension.mod(turns + lastItem.Item2, 4);
+                if (combinedTurns != 0) {
+                    tracker[tracker.Count - 1] = (side, combinedTurns);
+                }
                 return;
             }
         }
+        //Adds a new tuple
         tracker.Add((side, Extension.mod(turns, 4)));
     }
     //Without
@@ -228,9 +232,6 @@ public class CubeSolver : MonoBehaviour {
         foreach ((Color, int) rotation in rotations) {
             Color color = rotation.Item1;
             int turns = rotation.Item2;
-            if (turns == 0) {
-                continue;
-            }
             output += colorToNotation[color];
             if (Mathf.Abs(turns) == 3) {
                 turns = Mathf.RoundToInt(-Mathf.Sign(turns));
@@ -1257,10 +1258,6 @@ public class CubeSolver : MonoBehaviour {
                 }
             }
         }
-        /*
-        solveOutput.text = RotationsToString(rotations);
-        visualizer.UpdateVisualization();
-        */
         End();
     }
 }
