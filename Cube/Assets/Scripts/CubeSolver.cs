@@ -22,7 +22,7 @@ public class CubeSolver : MonoBehaviour {
     Color r;
     Color b;
     Color o;
-    void Start() {
+    void OnEnable() {
         //Intializes Variables
         orientation = new Dictionary<Color, Color[,]>();
         sideRelations = new Dictionary<Color, Color[]>();
@@ -233,9 +233,11 @@ public class CubeSolver : MonoBehaviour {
             Color color = rotation.Item1;
             int turns = rotation.Item2;
             output += colorToNotation[color];
+            //3 turns one way is 1 turn the other
             if (Mathf.Abs(turns) == 3) {
                 turns = Mathf.RoundToInt(-Mathf.Sign(turns));
             }
+            //Prime
             if (turns < 0) {
                 output += "'";
             }
